@@ -45,7 +45,7 @@ request (Suno-style fields)
 ## Install
 
 ```sh
-git clone https://github.com/ItsWayneMoyo/reverse-onus && cd reverse-onus
+git clone https://github.com/CHRISTpaid/reverse-onus && cd reverse-onus
 pip install -e .[mcp]
 
 # the engine (once): ACE-Step 1.5's REST server on http://localhost:8001

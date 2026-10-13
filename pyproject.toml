@@ -4,7 +4,12 @@ version = "0.1.0"
 description = "Open-source Suno-style song generator: lyrics, style tags, song structure, extend, cover, replace section, stems"
 requires-python = ">=3.10"
 license = {text = "MIT"}
+readme = "README.md"
 dependencies = ["fastapi>=0.110", "uvicorn>=0.29", "httpx>=0.27", "pydantic>=2.6", "numpy>=1.26"]
+
+[project.urls]
+Homepage = "https://github.com/CHRISTpaid/reverse-onus"
+Issues = "https://github.com/CHRISTpaid/reverse-onus/issues"
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.10"]

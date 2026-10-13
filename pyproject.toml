@@ -1,5 +1,5 @@
 [project]
-name = "suno-clone"
+name = "reverse-onus"
 version = "0.1.0"
 description = "Open-source Suno-style song generator: lyrics, style tags, song structure, extend, cover, replace section, stems"
 requires-python = ">=3.10"
@@ -11,14 +11,14 @@ mcp = ["mcp>=1.10"]
 dev = ["pytest>=8", "mcp>=1.10"]
 
 [project.scripts]
-suno-clone = "suno_clone.cli:main"
+reverse-onus = "reverse_onus.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["suno_clone*"]
+include = ["reverse_onus*"]
 
 [tool.setuptools.package-data]
-suno_clone = ["web/*.html"]
+reverse_onus = ["web/*.html"]

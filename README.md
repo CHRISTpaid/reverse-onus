@@ -1,6 +1,7 @@
-# Suno clone
+# reverse-onus
 
 > Independent open-source project. Not affiliated with or endorsed by Suno, Inc.
+> ("onus" is "suno" spelled backwards: this project reverse-engineered how Suno works.)
 
 An open-source, Suno-style song generator: **Custom mode** (lyrics with `[Verse]`/`[Chorus]`
 tags, Styles, Exclude styles, Weirdness, Style Influence, vocal gender, Instrumental),
@@ -44,7 +45,7 @@ request (Suno-style fields)
 ## Install
 
 ```sh
-git clone <this repo> suno-clone && cd suno-clone
+git clone https://github.com/ItsWayneMoyo/reverse-onus && cd reverse-onus
 pip install -e .[mcp]
 
 # the engine (once): ACE-Step 1.5's REST server on http://localhost:8001
@@ -52,12 +53,12 @@ git clone https://github.com/ace-step/ACE-Step-1.5 && cd ACE-Step-1.5 && uv sync
 # Windows: ACE-Step also ships a portable package with everything preinstalled (see its README)
 ```
 
-Then set `SUNO_CLONE_BACKEND=acestep` wherever you run the clone. Songs are saved in
-`~/SunoClone` (change with `SUNO_CLONE_WORKDIR`).
+Then set `REVERSE_ONUS_BACKEND=acestep` wherever you run the clone. Songs are saved in
+`~/ReverseOnus` (change with `REVERSE_ONUS_WORKDIR`).
 
 ## Three ways to use it
 
-**1. Studio page.** `suno-clone serve`, then open http://localhost:8000. Custom and Simple
+**1. Studio page.** `reverse-onus serve`, then open http://localhost:8000. Custom and Simple
 modes, lyrics, styles, exclude, sliders, two takes, and Extend / Replace section / Cover /
 Stems / Get whole song on each song.
 
@@ -67,25 +68,25 @@ and calls the tools: `create_song`, `check_songs`, `extend_song`, `replace_secti
 
 | Assistant | Setup |
 |---|---|
-| Claude Code | `claude mcp add suno-clone -e SUNO_CLONE_BACKEND=acestep -- suno-clone mcp` |
-| Claude Desktop | in `claude_desktop_config.json`: `"mcpServers": {"suno-clone": {"command": "suno-clone", "args": ["mcp"], "env": {"SUNO_CLONE_BACKEND": "acestep"}}}` |
-| Codex | in `~/.codex/config.toml`: `[mcp_servers.suno-clone]` with `command = "suno-clone"`, `args = ["mcp"]`, `env = { SUNO_CLONE_BACKEND = "acestep" }` |
-| ChatGPT | needs a remote HTTPS server: run `suno-clone mcp --http --port 8765`, expose it with a tunnel (e.g. `cloudflared tunnel --url http://localhost:8765`), and add `https://<tunnel>/mcp` as a custom connector in ChatGPT's developer mode |
+| Claude Code | `claude mcp add reverse-onus -e REVERSE_ONUS_BACKEND=acestep -- reverse-onus mcp` |
+| Claude Desktop | in `claude_desktop_config.json`: `"mcpServers": {"reverse-onus": {"command": "reverse-onus", "args": ["mcp"], "env": {"REVERSE_ONUS_BACKEND": "acestep"}}}` |
+| Codex | in `~/.codex/config.toml`: `[mcp_servers.reverse-onus]` with `command = "reverse-onus"`, `args = ["mcp"]`, `env = { REVERSE_ONUS_BACKEND = "acestep" }` |
+| ChatGPT | needs a remote HTTPS server: run `reverse-onus mcp --http --port 8765`, expose it with a tunnel (e.g. `cloudflared tunnel --url http://localhost:8765`), and add `https://<tunnel>/mcp` as a custom connector in ChatGPT's developer mode |
 
 Then ask, for example: "Write a synthwave song about driving at night, female vocals, and make
-it with suno-clone." Files are saved locally; the tools return their paths.
+it with reverse-onus." Files are saved locally; the tools return their paths.
 
 **3. Command line.**
 
 ```sh
-suno-clone generate --style "indie pop, dreamy, female vocals" --lyrics song.txt
-suno-clone generate --describe "a sad country song about a lost dog"
-suno-clone extend <clip_id> --at 95 --lyrics verse3.txt --duration 60
-suno-clone whole <extension_clip_id>
-suno-clone replace <clip_id> --start 42 --end 58 --lyrics new-chorus.txt
-suno-clone cover <clip_id or my-demo.wav> --style "lofi jazz" --influence 0.7
-suno-clone stems <clip_id>
-suno-clone parse song.txt                   # see how the clone reads your tags
+reverse-onus generate --style "indie pop, dreamy, female vocals" --lyrics song.txt
+reverse-onus generate --describe "a sad country song about a lost dog"
+reverse-onus extend <clip_id> --at 95 --lyrics verse3.txt --duration 60
+reverse-onus whole <extension_clip_id>
+reverse-onus replace <clip_id> --start 42 --end 58 --lyrics new-chorus.txt
+reverse-onus cover <clip_id or my-demo.wav> --style "lofi jazz" --influence 0.7
+reverse-onus stems <clip_id>
+reverse-onus parse song.txt                   # see how the clone reads your tags
 ```
 
 Tests: `pip install -e .[dev] && pytest -q` (19 tests, offline, mock engine, needs ffmpeg).
@@ -93,7 +94,7 @@ Tests: `pip install -e .[dev] && pytest -q` (19 tests, offline, mock engine, nee
 ## API
 
 ```sh
-suno-clone serve --port 8000
+reverse-onus serve --port 8000
 curl -X POST localhost:8000/api/generate -H 'Content-Type: application/json' -d '{
   "style": "synthwave, male vocals", "exclude_styles": "guitar",
   "lyrics": "[Verse]\nNeon on the water\n\n[Chorus]\nWe drive all night",
@@ -144,8 +145,8 @@ cat > cases.json <<'JSON'
 [{"name": "synth1", "reference": "downloads/neon.mp3", "style": "synthwave, male vocals",
   "lyrics": "lyrics/neon.txt", "exclude": "guitar"}]
 JSON
-suno-clone ab cases.json --out ab-runs/
-suno-clone compare clone.mp3 suno.mp3 --lyrics song.txt   # one pair
+reverse-onus ab cases.json --out ab-runs/
+reverse-onus compare clone.mp3 suno.mp3 --lyrics song.txt   # one pair
 ```
 
 Each report scores tempo, key, harmony (chroma profile), length, brightness, loudness and
@@ -157,11 +158,11 @@ takes against each other for the noise floor.
 
 | Env var | Default | Meaning |
 |---|---|---|
-| `SUNO_CLONE_BACKEND` | `mock` | `acestep`, `yue2`, `mock` |
-| `SUNO_CLONE_WORKDIR` | `~/SunoClone` | clips, audio, debug files |
-| `SUNO_CLONE_VARIATIONS` | `2` | takes per request |
-| `SUNO_CLONE_FORMAT` | `mp3` | delivery format (`mp3`, `wav`, `flac`); a lossless master is always kept |
-| `SUNO_CLONE_PUBLIC_BASE_URL` | | base for `audio_url` in API responses |
+| `REVERSE_ONUS_BACKEND` | `mock` | `acestep`, `yue2`, `mock` |
+| `REVERSE_ONUS_WORKDIR` | `~/ReverseOnus` | clips, audio, debug files |
+| `REVERSE_ONUS_VARIATIONS` | `2` | takes per request |
+| `REVERSE_ONUS_FORMAT` | `mp3` | delivery format (`mp3`, `wav`, `flac`); a lossless master is always kept |
+| `REVERSE_ONUS_PUBLIC_BASE_URL` | | base for `audio_url` in API responses |
 | `ACESTEP_URL`, `ACESTEP_API_KEY` | `http://localhost:8001` | ACE-Step 1.5 REST server |
 | `ACESTEP_MODEL` | server default | DiT model, e.g. `acestep-v15-xl-sft` for best quality |
 | `ACESTEP_BASE_MODEL` | | base DiT for engine stems (`acestep-v15-base`); not needed with Demucs |

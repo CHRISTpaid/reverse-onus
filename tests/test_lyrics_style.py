@@ -1,11 +1,11 @@
 import pytest
 from pydantic import ValidationError
 
-from suno_clone import lyrics as L
-from suno_clone.backends.acestep import build_request, sliders
-from suno_clone.backends.base import EngineTask
-from suno_clone.schemas import CoverRequest, GenerateRequest, ReplaceSectionRequest
-from suno_clone.style import compile_style
+from reverse_onus import lyrics as L
+from reverse_onus.backends.acestep import build_request, sliders
+from reverse_onus.backends.base import EngineTask
+from reverse_onus.schemas import CoverRequest, GenerateRequest, ReplaceSectionRequest
+from reverse_onus.style import compile_style
 
 SONG = """[Intro: soft piano]
 

@@ -102,7 +102,7 @@ lyric syntax, sliders, extend/cover/edit/stems, two takes, API) over the best op
 The web app runs in your browser, so REA can inspect the requests your own logged-in
 session sends during normal use. Follow [REA_CAPTURE.md](REA_CAPTURE.md). The model key, task
 names and slider fields it reveals go into `schemas.py` aliases and the slider mapping in
-`backends/acestep.py`; your own downloaded songs feed the A/B harness (`suno-clone ab`).
+`backends/acestep.py`; your own downloaded songs feed the A/B harness (`reverse-onus ab`).
 
 ## 7. Observed in a capture of the user's own session (2026-10-13)
 

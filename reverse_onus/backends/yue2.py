@@ -28,7 +28,7 @@ class YuE2Backend(Backend):
             try:
                 from yue2_infer import YuE2Pipeline  # type: ignore
             except ImportError as e:  # pragma: no cover - needs the wheel
-                raise BackendError("yue2_infer isn't installed; see suno_clone/backends/yue2.py") from e
+                raise BackendError("yue2_infer isn't installed; see reverse_onus/backends/yue2.py") from e
             self._pipe = YuE2Pipeline.from_pretrained(settings.yue2_model, device=settings.yue2_device,
                                                       progress=False)
         return self._pipe

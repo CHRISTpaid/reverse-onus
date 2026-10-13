@@ -39,7 +39,7 @@ from .schemas import (Clip, ConcatRequest, CoverRequest, ExtendRequest, Generate
                       ReplaceSectionRequest, StemsRequest)
 
 settings.workdir.mkdir(parents=True, exist_ok=True)
-app = FastAPI(title="Suno clone", version="0.1.0")
+app = FastAPI(title="reverse-onus", version="0.1.0")
 app.mount("/files", StaticFiles(directory=settings.workdir), name="files")
 pool = ThreadPoolExecutor(max_workers=2)
 CANCEL: dict[str, threading.Event] = {}

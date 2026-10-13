@@ -1,17 +1,17 @@
-"""suno-clone command line.
+"""reverse-onus command line.
 
-  suno-clone generate --style "indie pop, female vocals" --lyrics song.txt
-  suno-clone generate --describe "a sad country song about a lost dog"
-  suno-clone extend CLIP_ID --at 95 --lyrics verse3.txt
-  suno-clone whole CLIP_ID
-  suno-clone replace CLIP_ID --start 30 --end 45 --lyrics new-chorus.txt
-  suno-clone cover CLIP_ID|FILE --style "lofi jazz" [--influence 0.7]
-  suno-clone stems CLIP_ID
-  suno-clone parse song.txt
-  suno-clone compare clone.mp3 suno.mp3 [--lyrics song.txt]
-  suno-clone ab cases.json --out ab-runs/
-  suno-clone serve --port 8000          # API + studio page at http://localhost:8000
-  suno-clone mcp [--http]               # MCP server for AI assistants
+  reverse-onus generate --style "indie pop, female vocals" --lyrics song.txt
+  reverse-onus generate --describe "a sad country song about a lost dog"
+  reverse-onus extend CLIP_ID --at 95 --lyrics verse3.txt
+  reverse-onus whole CLIP_ID
+  reverse-onus replace CLIP_ID --start 30 --end 45 --lyrics new-chorus.txt
+  reverse-onus cover CLIP_ID|FILE --style "lofi jazz" [--influence 0.7]
+  reverse-onus stems CLIP_ID
+  reverse-onus parse song.txt
+  reverse-onus compare clone.mp3 suno.mp3 [--lyrics song.txt]
+  reverse-onus ab cases.json --out ab-runs/
+  reverse-onus serve --port 8000          # API + studio page at http://localhost:8000
+  reverse-onus mcp [--http]               # MCP server for AI assistants
 """
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def _print(clips) -> int:
 def main(argv: list[str] | None = None) -> int:
     from .schemas import (ConcatRequest, CoverRequest, ExtendRequest, GenerateRequest,
                           ReplaceSectionRequest, StemsRequest)
-    ap = argparse.ArgumentParser(prog="suno-clone", description=__doc__,
+    ap = argparse.ArgumentParser(prog="reverse-onus", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     g = sub.add_parser("generate")
@@ -148,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if a.cmd == "serve":
         import uvicorn
-        uvicorn.run("suno_clone.server:app", host=a.host, port=a.port)
+        uvicorn.run("reverse_onus.server:app", host=a.host, port=a.port)
         return 0
     return 2
 

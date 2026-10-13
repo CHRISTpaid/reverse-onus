@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from suno_clone import mcp_server as M
+from reverse_onus import mcp_server as M
 
 LYR = "[Verse]\nhello there\n\n[Chorus]\nla la la\n"
 

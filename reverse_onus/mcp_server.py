@@ -1,10 +1,10 @@
 """MCP server: lets Claude Code, Claude Desktop, Codex, ChatGPT or any MCP client make songs.
 
-  suno-clone mcp                      # stdio (Claude Code, Claude Desktop, Codex)
-  suno-clone mcp --http --port 8765   # streamable HTTP at /mcp (remote clients, e.g. ChatGPT)
+  reverse-onus mcp                      # stdio (Claude Code, Claude Desktop, Codex)
+  reverse-onus mcp --http --port 8765   # streamable HTTP at /mcp (remote clients, e.g. ChatGPT)
 
 The assistant writes the lyrics and styles; these tools turn them into audio with the configured
-engine (SUNO_CLONE_BACKEND=acestep for real songs). Songs take a while, so every tool returns
+engine (REVERSE_ONUS_BACKEND=acestep for real songs). Songs take a while, so every tool returns
 straight away with clip ids and status, after waiting up to `wait_seconds` for them to finish;
 call check_songs to keep waiting.
 """
@@ -176,7 +176,7 @@ def build_server():
         from mcp.server.mcpserver import MCPServer as Server
     except ImportError:  # 1.x
         from mcp.server.fastmcp import FastMCP as Server
-    server = Server(name="suno-clone", instructions=INSTRUCTIONS)
+    server = Server(name="reverse-onus", instructions=INSTRUCTIONS)
     for fn in TOOLS:
         server.tool()(fn)
     return server

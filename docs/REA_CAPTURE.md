@@ -53,4 +53,4 @@ the model key, the task names used for extend, cover and replace section, and th
 
 Send me `rea.json` (or the digest output) and I'll fold the confirmed facts into the clone.
 For quality, download a few of your own songs and list them in a `cases.json` for
-`suno-clone ab` (README, "Measuring against Suno").
+`reverse-onus ab` (README, "Measuring against Suno").

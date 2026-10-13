@@ -62,8 +62,8 @@ def to_suno_clip(clip: Clip, audio_url: str | None) -> dict:
     parent = m.get("parent_id")
     return {
         "id": clip.id, "status": status, "title": clip.title, "audio_url": audio_url,
-        "model_name": "suno-clone", "major_model_version": (m.get("engine") or {}).get("engine", "suno-clone")
-        if isinstance(m.get("engine"), dict) else "suno-clone",
+        "model_name": "reverse-onus", "major_model_version": (m.get("engine") or {}).get("engine", "reverse-onus")
+        if isinstance(m.get("engine"), dict) else "reverse-onus",
         "created_at": clip.created_at, "error_message": clip.error,
         "metadata": {
             "type": "gen", "task": {"generate": None, "concat": "concat"}.get(clip.task, clip.task),

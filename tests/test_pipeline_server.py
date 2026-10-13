@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from suno_clone import audio, pipeline
-from suno_clone.config import settings
-from suno_clone.eval.compare import compare
-from suno_clone.eval.metrics import features, wer
-from suno_clone.schemas import (ConcatRequest, CoverRequest, ExtendRequest, GenerateRequest,
+from reverse_onus import audio, pipeline
+from reverse_onus.config import settings
+from reverse_onus.eval.compare import compare
+from reverse_onus.eval.metrics import features, wer
+from reverse_onus.schemas import (ConcatRequest, CoverRequest, ExtendRequest, GenerateRequest,
                                 ReplaceSectionRequest, StemsRequest)
 
 LYR = "[Verse]\nhello there\nhow are you\n\n[Chorus]\nla la la\n"
@@ -103,7 +103,7 @@ def test_metrics_tempo_key_and_wer(tmp_path):
 
 @pytest.fixture(scope="module")
 def client():
-    from suno_clone.server import app
+    from reverse_onus.server import app
     return TestClient(app)
 
 
@@ -145,7 +145,7 @@ def test_server_flow(client):
 
 
 def test_suno_shaped_bodies(client):
-    from suno_clone.suno_compat import from_suno_body
+    from reverse_onus.suno_compat import from_suno_body
     body = {"mv": "chirp-hawk", "generation_type": "TEXT", "title": "t", "tags": "pop", "negative_tags": "rock n roll",
             "prompt": LYR, "make_instrumental": False, "persona_id": None, "token": "x",
             "metadata": {"create_mode": "custom",
@@ -164,7 +164,7 @@ def test_suno_shaped_bodies(client):
 
 
 def test_suno_simple_stems_and_feed_shape(client):
-    from suno_clone.suno_compat import from_suno_body
+    from reverse_onus.suno_compat import from_suno_body
     op, req = from_suno_body({"task": "agentic_thinking", "mv": "chirp-goose", "prompt": "",
                               "gpt_description_prompt": "a song about rain",
                               "metadata": {"create_mode": "simple", "lyrics_model": "default"}})
@@ -185,7 +185,7 @@ def test_suno_simple_stems_and_feed_shape(client):
 
 def test_studio_page_and_clip_list(client):
     page = client.get("/")
-    assert page.status_code == 200 and "Suno Clone Studio" in page.text
+    assert page.status_code == 200 and "Reverse Onus Studio" in page.text
     clips = client.get("/api/clips", params={"limit": 5}).json()["clips"]
     assert 0 < len(clips) <= 5
     assert clips == sorted(clips, key=lambda c: c["created_at"], reverse=True)

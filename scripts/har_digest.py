@@ -45,7 +45,7 @@ def body_json(text):
 
 
 def main(path: str) -> None:
-    doc = json.load(open(path))
+    doc = json.load(open(path, encoding="utf-8-sig"))
     records = (doc.get("normalized_result") or doc).get("records", [])
     seen_values: dict[str, set] = {}
     for r in records:

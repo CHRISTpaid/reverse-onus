@@ -27,12 +27,15 @@ reverse-onus has two parts that run side by side:
 1. Download the portable package:
    [ACE-Step-1.5.7z](https://files.acemusic.ai/acemusic/win/ACE-Step-1.5.7z). Everything it
    needs is already inside.
-2. Extract it with [7-Zip](https://www.7-zip.org/) to a folder with plenty of free space, for
-   example `C:\ACE-Step-1.5`.
+2. Create an empty folder with plenty of free space, for example `C:\ACE-Step-1.5`, and
+   extract the package into it with [7-Zip](https://www.7-zip.org/). The archive has no folder
+   of its own, so its files land straight in the folder you pick.
 3. Open that folder and double-click **`start_api_server.bat`**.
    (AMD graphics cards use `start_api_server_rocm.bat` instead.)
 4. Leave the black window open. The first start downloads the models and can take a while.
    It's ready when you can open http://localhost:8001/health in your browser.
+5. If the window shows error 1455 or "paging file is too small", see
+   [Troubleshooting](#troubleshooting).
 
 ### Mac (Apple Silicon)
 
@@ -128,7 +131,14 @@ To make a song:
 3. Press play, or open a song's **⋯** menu to extend it, cover it in another style, replace a
    section, split stems or download it.
 
-Your songs are saved in a `ReverseOnus` folder in your home folder.
+Your songs are saved in a `ReverseOnus` folder in your home folder, one folder per song. To save
+them somewhere else, set `REVERSE_ONUS_WORKDIR` to that folder before starting.
+
+Song length is chosen by the model unless you set one. The same short lyric can come out at
+45 seconds or 3 minutes, so set **Length** under **More options** if you want a particular length.
+
+On a fast card it's quick: on an RTX 4090 two takes of a song took about 26 seconds once the
+models had loaded.
 
 ## Every time after that
 
@@ -160,12 +170,14 @@ needs to be running. Setup for each assistant is in the
 
 | What you see | What to do |
 |---|---|
+| ACE-Step's window shows Windows error 1455 or "the paging file is too small" while loading | Its language model ran out of Windows virtual memory, even on PCs with plenty of RAM. In the ACE-Step folder, copy `.env.example` to `.env` (if there's no `.env` yet), add the line `ACESTEP_LM_BACKEND=pt`, and start `start_api_server.bat` again. Making the Windows paging file bigger also fixes it. |
 | A song fails with "Can't reach ACE-Step" | ACE-Step isn't running or hasn't finished loading. Start it (Step 1) and wait until http://localhost:8001/health opens. |
 | "ffmpeg is required" | Install ffmpeg (Step 2), then open a new terminal. |
 | `reverse-onus` is not recognised as a command | Activate the environment first: `.venv\Scripts\activate` (Windows) or `source .venv/bin/activate` (Mac, Linux). |
 | The engine badge says "Demo engine" | You started it without `--engine acestep`. |
 | The first start or first song takes a long time | ACE-Step downloads and loads its models the first time. Later songs are much faster. |
 | ACE-Step runs out of graphics memory | Use smaller models. ACE-Step's guide lists which models fit which cards; set them in its `.env` file (`ACESTEP_CONFIG_PATH=acestep-v15-turbo`, `ACESTEP_LM_MODEL_PATH=acestep-5Hz-lm-0.6B`). |
+| Simple mode writes lyrics in the wrong language | Name the language in your description, for example "an upbeat pop song about summer, in Spanish". With no language named, reverse-onus asks for English. |
 | Simple mode fails on a small card | Simple mode needs ACE-Step's language model, which is switched off on cards with 6 GB or less. Use Custom mode, or a bigger card. |
 | Port 8000 is already in use | Pick another: `reverse-onus serve --engine acestep --port 8080`, then open http://localhost:8080. |
 
@@ -178,3 +190,13 @@ pip install -e ".[mcp]"
 ```
 
 ACE-Step updates separately. Its Windows package includes `check_update.bat`.
+
+## Command line
+
+Every command takes `--engine acestep`, for example:
+
+```sh
+reverse-onus generate --engine acestep --style "indie folk, female vocals" --lyrics song.txt --duration 90
+```
+
+The full list of commands is in the [README](../README.md#three-ways-to-use-it).

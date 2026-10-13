@@ -85,7 +85,7 @@ and calls the tools: `create_song`, `check_songs`, `extend_song`, `replace_secti
 Then ask, for example: "Write a synthwave song about driving at night, female vocals, and make
 it with reverse-onus." Files are saved locally; the tools return their paths.
 
-**3. Command line.**
+**3. Command line.** Add `--engine acestep` to any command (or set `REVERSE_ONUS_BACKEND=acestep`).
 
 ```sh
 reverse-onus generate --style "indie pop, dreamy, female vocals" --lyrics song.txt
@@ -98,7 +98,7 @@ reverse-onus stems <clip_id>
 reverse-onus parse song.txt                   # see how the clone reads your tags
 ```
 
-Tests: `pip install -e .[dev] && pytest -q` (21 tests, offline, mock engine, needs ffmpeg).
+Tests: `pip install -e .[dev] && pytest -q` (22 tests, offline, mock engine, needs ffmpeg).
 
 ## API
 
@@ -183,11 +183,13 @@ takes against each other for the noise floor.
 - Verified here: lyric parsing, style compilation, Suno field limits, the ACE-Step request
   mapping, generate / simple mode / extend / whole song / replace section / cover / stems,
   the API, the studio page, the MCP tools (stdio, MCP SDK 1.x and 2.x), idempotency and the
-  scoring metrics, against the mock engine (21 passing tests).
-- Not yet run: live ACE-Step or YuE2 generation (needs a GPU machine). The ACE-Step requests
-  follow its published API docs and are unit tested; the YuE2 call follows its model card.
-- Extend is built on ACE-Step's repaint task over the clip's tail plus silence. That is my
-  reconstruction of Suno's continuation, and the first thing to check on a GPU.
+  scoring metrics, against the mock engine (22 passing tests).
+- Run live on ACE-Step 1.5 (RTX 4090, 24 GB, Windows, turbo DiT + 1.7B LM): generate, Simple
+  mode, extend, replace section and cover all work. Two takes of a song took about 26 s once
+  the models were loaded; extend, replace and cover took 8 to 12 s. YuE2 hasn't been run live.
+- Extend uses ACE-Step's repaint task over the clip's tail plus silence. That's a
+  reconstruction of Suno's continuation; it works, but how close it sounds to Suno's still
+  needs the A/B harness.
 - Not built: Remaster (Suno's `chirp-halibut` upsampler), Personas/Voices, v6's plain-language section edits, mashups, image/video input.
 - Licences: this project is MIT (LICENSE). ACE-Step 1.5 is MIT. YuE2 weights are CC BY-NC 4.0. Only use audio you own for
   covers and A/B references.

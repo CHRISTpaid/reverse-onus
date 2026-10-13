@@ -53,7 +53,7 @@ class Store:
         d = self.dir(clip.id)
         with self.lock:  # write-then-rename so readers never see a half-written file
             tmp = d / f"clip.json.{threading.get_ident()}.tmp"
-            tmp.write_text(clip.model_dump_json(indent=2))
+            tmp.write_text(clip.model_dump_json(indent=2), encoding="utf-8")
             os.replace(tmp, d / "clip.json")
         return clip
 
@@ -61,7 +61,7 @@ class Store:
         p = self.root / clip_id / "clip.json"
         if not clip_id.replace("-", "").isalnum() or not p.exists():
             raise KeyError(clip_id)
-        return Clip.model_validate_json(p.read_text())
+        return Clip.model_validate_json(p.read_text(encoding="utf-8"))
 
     def master(self, clip_id: str) -> np.ndarray:
         clip = self.get(clip_id)
@@ -97,7 +97,7 @@ def _debug(clips: list[Clip], task: EngineTask, extra: dict | None = None) -> No
             "cover_strength": task.cover_strength, "style_notes": task.style.notes, "log": task.log,
             **(extra or {})}
     for c in clips:
-        (store.dir(c.id) / "debug.json").write_text(json.dumps(info, indent=2, default=str))
+        (store.dir(c.id) / "debug.json").write_text(json.dumps(info, indent=2, default=str), encoding="utf-8")
 
 
 def _fail(clips: list[Clip], err: Exception, cancelled: bool = False) -> None:

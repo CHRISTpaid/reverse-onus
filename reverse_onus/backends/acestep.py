@@ -21,6 +21,7 @@ Suno controls map to ACE-Step like this (Inferred, tune with the A/B harness):
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 
@@ -39,6 +40,22 @@ def sliders(weirdness: float, style_influence: float) -> dict:
         "guidance_scale": round(4.0 + 6.0 * style_influence, 3),
         "use_cot_caption": style_influence < 0.75,
     }
+
+
+_LANGUAGES = ("english", "spanish", "french", "german", "italian", "portuguese", "dutch", "russian", "polish",
+              "turkish", "arabic", "hindi", "japanese", "korean", "chinese", "mandarin", "cantonese",
+              "vietnamese", "thai", "indonesian", "swahili", "zulu", "shona", "yoruba", "latin")
+
+
+def describe_query(description: str) -> str:
+    """Simple mode ignores vocal_language and follows a language named in the description (seen on a
+    live ACE-Step 1.5 run: an English description got Vietnamese lyrics). So an ASCII description that
+    names no language gets ". English" appended."""
+    d = description.strip()
+    words = set(re.findall(r"[a-z]+", d.lower()))
+    if d.isascii() and not words.intersection(_LANGUAGES):
+        return d.rstrip(" .") + ". English"
+    return d
 
 
 def build_request(task: EngineTask) -> dict:
@@ -64,7 +81,8 @@ def build_request(task: EngineTask) -> dict:
         if task.duration:
             body["audio_duration"] = round(task.duration, 2)
     elif task.kind == "describe":
-        body.update(task_type="text2music", sample_mode=True, sample_query=task.description, thinking=True)
+        body.update(task_type="text2music", sample_mode=True, sample_query=describe_query(task.description),
+                    thinking=True)
         body.pop("lyrics")
         if not st.caption:
             body.pop("prompt")

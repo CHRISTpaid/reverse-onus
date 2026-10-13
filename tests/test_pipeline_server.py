@@ -60,8 +60,10 @@ def test_replace_section_keeps_the_rest():
     b = audio.load(settings.workdir / new.id / "master.flac")
     assert len(a) == len(b)
     s, e = audio.idx(10), audio.idx(20)
-    assert np.abs(a[: s - audio.idx(0.2)] - b[: s - audio.idx(0.2)]).max() < 1e-3
-    assert np.abs(a[e + audio.idx(0.2):] - b[e + audio.idx(0.2):]).max() < 1e-3
+    m = audio.idx(2.2)  # 2 s crossfade margins either side, like Suno's infill
+    assert np.abs(a[: s - m] - b[: s - m]).max() < 1e-3
+    assert np.abs(a[e + m:] - b[e + m:]).max() < 1e-3
+    assert new.metadata["context"] == [0.0, 35.0]
     assert np.abs(a[s + audio.idx(1): e - audio.idx(1)] - b[s + audio.idx(1): e - audio.idx(1)]).max() > 0.01
 
 
@@ -167,6 +169,10 @@ def test_suno_simple_stems_and_feed_shape(client):
                               "gpt_description_prompt": "a song about rain",
                               "metadata": {"create_mode": "simple", "lyrics_model": "default"}})
     assert op == "generate" and req.simple
+    op, req = from_suno_body({"task": "infill", "mv": "chirp-hawk", "continue_clip_id": "c3", "prompt": LYR,
+                              "infill_start_s": 114.8, "infill_end_s": 144.8, "infill_dur_s": 30,
+                              "metadata": {"infill_lyrics": "[Chorus]\nnew words"}})
+    assert op == "replace-section" and req.start == 114.8 and req.end == 144.8 and "new words" in req.lyrics
     op, req = from_suno_body({"task": "gen_stem", "continue_clip_id": "c1", "stem_task": "twelve"})
     assert op == "stems" and req.clip_id == "c1"
     r = client.post("/api/generate/v2-web/", json={"tags": "pop", "prompt": LYR})

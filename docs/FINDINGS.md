@@ -96,7 +96,7 @@ lyric syntax, sliders, extend/cover/edit/stems, two takes, API) over the best op
 - The prompt expansion Suno applies to Styles before conditioning, and how Exclude is applied.
 - What the sliders' 0..1 values do inside the model, and what `aug_creativity` controls.
 - How v6 maps a plain-language section edit onto the model.
-- Which version `chirp-hawk` is, and the request shapes for Get whole song and Replace Section.
+- The request shape for Get whole song.
 
 ## 6. How to settle the unknowns with REA
 
@@ -114,7 +114,7 @@ summarised with REA (695 requests). Request bodies only: that export has no resp
 | Item | Observed |
 |---|---|
 | Generate endpoint | `POST studio-api-prod.suno.com/api/generate/v2-web/` for every generation, extend and cover |
-| Model key | Custom, Extend and Cover sent `"mv": "chirp-hawk"`, `"generation_type": "TEXT"`. Which version chirp-hawk is stays Unknown: it never appears in Suno's replies |
+| Model key | Custom, Extend and Cover sent `"mv": "chirp-hawk"`, `"generation_type": "TEXT"` (v6, confirmed by the third capture) |
 | Custom mode | `title`, `tags` (Styles), `negative_tags` (Exclude styles), `prompt` (lyrics), `make_instrumental`, `metadata.create_mode: "custom"` |
 | Sliders | `metadata.control_sliders = {weirdness_constraint: 0.23, style_weight: 0.64, aug_creativity: 1}`: Weirdness and Style Influence are sent on a 0..1 scale, the scale the clone already uses |
 | Extend | `"task": "extend"`, `continue_clip_id`, `continue_at` in seconds (131), `metadata.is_remix: true`, `metadata.lyrics_updated: false` |
@@ -128,16 +128,29 @@ summarised with REA (695 requests). Request bodies only: that export has no resp
 |---|---|
 | Simple mode | same endpoint; `"task": "agentic_thinking"`, `"mv": "chirp-goose"`, empty `prompt`, the description in `gpt_description_prompt`, `metadata.create_mode: "simple"`, `is_speech: true`, `lyrics_model: "default"`. The lyrics are written server side by a separate lyrics model |
 | Stems | `"task": "gen_stem"`, `"mv": "chirp-v3-5-b"`, `make_instrumental: true`, `continue_clip_id` (the source), `stem_type_id: 91`, `stem_type_group_name: "Twelve"`, `stem_task: "twelve"`; then `/api/gen/{id}/convert_wav/`, `/api/download/authorize`, `/api/studio/create-project`. Stems are made by a generation model, not a plain separator |
-| Model names in replies | `chirp-fenix` = v5.5, `chirp-flounder` = v5.5 upsampling, `chirp-goose` = v6 (seen on Simple/agentic songs) |
+| Model names in replies | `chirp-fenix` = v5.5, `chirp-flounder` = v5.5 upsampling, `chirp-goose` = v6 (seen on Simple/agentic songs); full list after the third capture below |
 | Task values in replies | `cover`, `vox_cover`, `artist_cover`, `vox`, `upsample`, `agentic_thinking` |
 | Clip shape (`/api/feed/v3`) | `id`, `status` ("complete"), `model_name`, `major_model_version`, `title`, `image_url`, `video_url`; audio in `media_urls` as a CloudFront `.m4a` (Opus, progressive); `metadata` holds `type` (gen / upload / upsample), `task`, `tags`, `negative_tags`, `prompt`, `gpt_description_prompt`, `duration` (s), `control_sliders`, source ids (cover, edited, artist, upsample), `persona_id`, `has_vocal`, `has_stem`, `is_remix`, `is_speech`, `vox_render_mode`, min/max/avg BPM |
 
-Still not captured: Get whole song, Replace Section, and Suno's replies to the generate calls
-themselves (Chrome kept replies for only 101 of 578 Suno requests).
+**Third capture (replies kept):**
 
-What this changes in the clone: the request models accept these keys, and
+| Item | Observed |
+|---|---|
+| Replace Section | same endpoint; `"task": "infill"`, `"mv": "chirp-hawk"`, `continue_clip_id`, `prompt` = the full lyrics, `metadata.infill_lyrics` = the new section's lyrics, `infill_start_s: 114.8`, `infill_end_s: 144.8`, `infill_dur_s: 30`, `infill_context_start_s: 99.8`, `infill_context_end_s: 159.8` (15 s of the song either side) |
+| Infill result | reply adds `include_history_s: 2.0`, `include_future_s: 2.0`; each new clip is 34 s (the section plus 2 s margins), spliced into the song by the web app |
+| Remaster | `POST /api/generate/upsample` with `clip_id`, `"model_name": "chirp-halibut"`, `"variation_category": "normal"`, `"style_profile": "boost"`; returns 2 clips titled "&lt;title&gt; (Remastered)" |
+| Lifecycle | generate replies with 2 clips, `status: "submitted"`, empty `audio_url`; `/api/feed/v3` then shows submitted, queued, streaming, complete; `duration` appears only at complete; audio is the CloudFront `.m4a` in `media_urls` |
+| Model keys (confirmed from replies) | `chirp-auk` v4.5, `chirp-crow` v5, `chirp-fenix` v5.5, `chirp-flounder` v5.5 upsampling, `chirp-hawk` v6 (Custom, Extend, Cover, Replace Section), `chirp-halibut` v6 remaster, `chirp-goose` v6 Simple mode; `chirp-v3-5-b` (stems) is probably v3.5 by its name, unconfirmed |
+
+Inferred from these: v6 is a family of separately named models for generation, simple-mode
+planning, remastering and stems, and the editing tasks (extend, infill, cover) all run on the
+main generator with audio context rather than on separate edit models. Still not captured:
+Get whole song.
+
+What this changes in the clone: the request models accept these keys,
 `POST /api/generate/v2-web/` takes a web-app-shaped body as is (generate, simple, extend,
-cover, gen_stem), and `GET /api/feed/v3` returns clips in the same shape Suno's feed does
+cover, infill, gen_stem), Replace Section now sends the engine 15 s of context either side and
+crossfades over 2 s margins like Suno's infill, and `GET /api/feed/v3` returns clips in the same shape Suno's feed does
 (`suno_compat.py`). Timestamped
 lyrics (`aligned_lyrics`) and waveform previews are features the clone doesn't have yet.
 

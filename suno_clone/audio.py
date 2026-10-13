@@ -69,23 +69,24 @@ def crossfade(a: np.ndarray, b: np.ndarray, sec: float = 0.05, sr: int | None = 
     return np.concatenate([a[:-n], mid, b[n:]])
 
 
-def splice(original: np.ndarray, new: np.ndarray, start: float, end: float, fade: float = 0.25,
+def splice(original: np.ndarray, new: np.ndarray, start: float, end: float, margin: float = 2.0,
            sr: int | None = None) -> np.ndarray:
-    """Keep `original` outside [start, end] and `new` inside it, with crossfades at both seams."""
-    s, e = idx(start, sr), min(idx(end, sr), len(original))
-    new = new[: len(original)] if len(new) >= len(original) else np.concatenate(
-        [new, original[len(new):]])
+    """Keep `original` outside [start - margin, end + margin] and `new` inside [start, end],
+    crossfading over the margins (Suno's infill uses 2 s of history and future)."""
+    n_all = len(original)
+    new = new[:n_all] if len(new) >= n_all else np.concatenate([new, original[len(new):]])
+    s, e = idx(start, sr), min(idx(end, sr), n_all)
+    m = idx(margin, sr)
     out = original.copy()
     out[s:e] = new[s:e]
-    n = idx(fade, sr)
-    for seam, fwd in ((s, True), (e, False)):
-        a, b = max(seam - n // 2, 0), min(seam + n // 2, len(out))
-        if b <= a:
-            continue
-        ramp = np.linspace(0, 1, b - a, dtype=np.float32)[:, None]
-        if not fwd:
-            ramp = 1 - ramp
-        out[a:b] = original[a:b] * (1 - ramp) + new[a:b] * ramp
+    a = max(s - m, 0)
+    if s > a:
+        ramp = np.linspace(0, 1, s - a, dtype=np.float32)[:, None]
+        out[a:s] = original[a:s] * (1 - ramp) + new[a:s] * ramp
+    b = min(e + m, n_all)
+    if b > e:
+        ramp = np.linspace(1, 0, b - e, dtype=np.float32)[:, None]
+        out[e:b] = original[e:b] * (1 - ramp) + new[e:b] * ramp
     return out
 
 

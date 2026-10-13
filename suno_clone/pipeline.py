@@ -31,6 +31,8 @@ from .style import compile_style
 
 EXTEND_CONTEXT_SECONDS = 120.0   # how much of the parent the engine hears before the new part
 ENGINE_MAX_SECONDS = 600.0       # ACE-Step's 10-minute ceiling
+INFILL_CONTEXT_SECONDS = 15.0    # Suno's infill sends 15 s of the song either side of the section
+INFILL_MARGIN_SECONDS = 2.0      # and crossfades over 2 s of history and future
 
 
 class Store:
@@ -220,18 +222,29 @@ def replace_section(req: ReplaceSectionRequest, clips: list[Clip],
     spec = compile_style(req.style or pm.get("style", ""), req.exclude_styles or pm.get("exclude_styles", ""),
                          vocal_gender=req.vocal_gender, instrumental=bool(pm.get("instrumental")),
                          song=song, weirdness=req.weirdness, style_influence=req.style_influence)
-    src = store.dir(parent.id) / "master.flac"
+    # Like Suno's infill: the engine hears the section plus 15 s either side, not the whole song.
+    ctx_s = max(0.0, req.start - INFILL_CONTEXT_SECONDS)
+    ctx_e = min(audio.seconds(a), end + INFILL_CONTEXT_SECONDS)
+    work = store.dir(clips[0].id) / "engine"
+    work.mkdir(parents=True, exist_ok=True)
+    src = audio.save(a[audio.idx(ctx_s): audio.idx(ctx_e)], work / "infill-src.wav")
     seed = _seed(req.seed)
-    task = EngineTask(kind="repaint", style=spec, song=song, out_dir=store.dir(clips[0].id) / "engine",
-                      seed=seed, variations=len(clips), src_audio=src, start=req.start, end=end,
+    task = EngineTask(kind="repaint", style=spec, song=song, out_dir=work,
+                      seed=seed, variations=len(clips), src_audio=src, start=req.start - ctx_s, end=end - ctx_s,
                       cancel=cancel or threading.Event())
     res = _run(task, clips)
     for i, (clip, f) in enumerate(zip(clips, res.files)):
-        y = audio.splice(a, audio.load(f), req.start, end)
+        local = audio.load(f)
+        full = a.copy()
+        i0 = audio.idx(ctx_s)
+        n = min(len(local), len(full) - i0)
+        full[i0: i0 + n] = local[:n]
+        y = audio.splice(a, full, req.start, end, margin=INFILL_MARGIN_SECONDS)
         clip.title = clip.title or parent.title
         _finish(clip, y, {**{k: v for k, v in pm.items() if k in ("style", "exclude_styles", "instrumental")},
                           "parent_id": parent.id, "replaced": [req.start, end], "section_lyrics": req.lyrics,
-                          "lyrics": pm.get("lyrics", ""), "seed": seed + i, "engine": res.meta})
+                          "context": [ctx_s, ctx_e], "lyrics": pm.get("lyrics", ""), "seed": seed + i,
+                          "engine": res.meta})
     _debug(clips, task, {"parent_id": parent.id})
     return clips
 

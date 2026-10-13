@@ -1,7 +1,7 @@
 """HTTP API modelled on Suno's composer actions.
 
   POST /api/generate          custom or simple mode, returns 2 clips (queued)
-  POST /api/generate/v2-web/  the Suno web app's own body shape (generate, simple, extend, cover, stems)
+  POST /api/generate/v2-web/  the Suno web app's own body shape (generate, simple, extend, cover, infill, stems)
   GET  /api/feed/v3?ids=a,b   clips in the shape Suno's feed returns them
   POST /api/extend            continue a clip from a timestamp
   POST /api/concat            "Get whole song" for the last clip of an extend chain

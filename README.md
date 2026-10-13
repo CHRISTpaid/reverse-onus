@@ -24,7 +24,7 @@ request (Suno-style fields)
   -> engine          acestep | yue2 | mock     (2 seeds per request)
        generate      text2music, or the planner LM writes lyrics in Simple mode
        extend        repaint on [clip tail + silence], keep the new part
-       replace       repaint [start, end], splice so the rest is untouched
+       replace       repaint [start, end] with 15 s context either side, 2 s crossfades (as Suno)
        cover         cover task, Audio Influence -> strength
        stems         Demucs if installed, else engine extract
   -> post            trim to requested length, master.flac + loudness-normalised mp3 (-14 LUFS)
@@ -66,7 +66,7 @@ curl -X POST localhost:8000/api/concat -d '{"clip_id":"<extension id>"}' -H 'Con
 ```
 
 `POST /api/generate/v2-web/` also takes the exact body Suno's web app sends (generate, simple,
-extend, cover, stems), and `GET /api/feed/v3?ids=` returns clips in Suno's feed shape, both as
+extend, cover, replace section, stems), and `GET /api/feed/v3?ids=` returns clips in Suno's feed shape, both as
 seen in captures of your own session.
 
 Also `POST /api/replace-section`, `/api/cover`, `/api/stems`, `/api/lyrics/parse`,
@@ -138,6 +138,6 @@ takes against each other for the noise floor.
   follow its published API docs and are unit tested; the YuE2 call follows its model card.
 - Extend is built on ACE-Step's repaint task over the clip's tail plus silence. That is my
   reconstruction of Suno's continuation, and the first thing to check on a GPU.
-- Not built: Personas/Voices, v6's plain-language section edits, mashups, image/video input.
+- Not built: Remaster (Suno's `chirp-halibut` upsampler), Personas/Voices, v6's plain-language section edits, mashups, image/video input.
 - Licences: ACE-Step 1.5 is MIT. YuE2 weights are CC BY-NC 4.0. Only use audio you own for
   covers and A/B references.

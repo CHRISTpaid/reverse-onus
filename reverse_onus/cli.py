@@ -28,7 +28,7 @@ def _text(v: str | None) -> str:
     if not v:
         return ""
     p = Path(v)
-    return p.read_text() if p.exists() and p.is_file() else v
+    return p.read_text(encoding="utf-8-sig") if p.exists() and p.is_file() else v
 
 
 def _sound(p: argparse.ArgumentParser) -> None:
@@ -106,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
     sv = sub.add_parser("serve", help="studio page and API at http://localhost:8000")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8000)
-    for p in (mc, sv):
+    for p in sub.choices.values():
         p.add_argument("--engine", choices=["acestep", "yue2", "mock"],
                        help="music engine (default: REVERSE_ONUS_BACKEND, else mock)")
     a = ap.parse_args(argv)
@@ -164,7 +164,7 @@ def run_ab(cases_path: Path, out: Path) -> int:
     your Suno download, writes <out>/<name>/report.json and <out>/summary.json."""
     from .eval.compare import compare
     from .schemas import GenerateRequest
-    cases = json.loads(cases_path.read_text())
+    cases = json.loads(cases_path.read_text(encoding="utf-8-sig"))
     out.mkdir(parents=True, exist_ok=True)
     summary = []
     for case in cases:
@@ -182,11 +182,11 @@ def run_ab(cases_path: Path, out: Path) -> int:
                 continue
             rep = compare(settings.workdir / c.id / "master.flac", case["reference"], lyr)
             reports.append({"clip": c.id, **rep})
-        (d / "report.json").write_text(json.dumps(reports, indent=2))
+        (d / "report.json").write_text(json.dumps(reports, indent=2), encoding="utf-8")
         best = max((r.get("overall", 0) for r in reports), default=0)
         summary.append({"name": case["name"], "best_overall": best})
         print(json.dumps(summary[-1]))
-    (out / "summary.json").write_text(json.dumps(summary, indent=2))
+    (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return 0
 
 

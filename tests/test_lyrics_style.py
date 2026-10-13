@@ -104,7 +104,7 @@ def test_acestep_request_mapping(tmp_path):
     assert b["task_type"] == "repaint" and b["repainting_end"] == -1 and b["chunk_mask_mode"] == "explicit"
     t.kind, t.description = "describe", "lofi song about tea"
     b = build_request(t)
-    assert b["sample_mode"] and b["sample_query"] == "lofi song about tea" and "lyrics" not in b
+    assert b["sample_mode"] and b["sample_query"] == "lofi song about tea. English" and "lyrics" not in b
     t.kind = "stems"
     b = build_request(t)
     assert b["task_type"] == "extract" and "vocals" in b["instruction"]
@@ -118,3 +118,10 @@ def test_acestep_down_gives_a_clear_error(monkeypatch):
     monkeypatch.setattr(settings, "acestep_url", "http://127.0.0.1:9")  # nothing listens on the discard port
     with pytest.raises(BackendError, match="Start its API server"):
         AceStepBackend()._submit({"prompt": "pop"}, None)
+
+
+def test_simple_mode_language():
+    from reverse_onus.backends.acestep import describe_query
+    assert describe_query("a sad country song about a lost dog.") == "a sad country song about a lost dog. English"
+    assert describe_query("a Spanish love song") == "a Spanish love song"
+    assert describe_query("une chanson d'été") == "une chanson d'été"

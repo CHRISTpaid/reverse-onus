@@ -103,10 +103,15 @@ def main(argv: list[str] | None = None) -> int:
     mc.add_argument("--http", action="store_true", help="streamable HTTP instead of stdio")
     mc.add_argument("--host", default="127.0.0.1")
     mc.add_argument("--port", type=int, default=8765)
-    sv = sub.add_parser("serve")
+    sv = sub.add_parser("serve", help="studio page and API at http://localhost:8000")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8000)
+    for p in (mc, sv):
+        p.add_argument("--engine", choices=["acestep", "yue2", "mock"],
+                       help="music engine (default: REVERSE_ONUS_BACKEND, else mock)")
     a = ap.parse_args(argv)
+    if getattr(a, "engine", None):
+        settings.backend = a.engine
 
     if a.cmd == "generate":
         req = GenerateRequest(lyrics=_text(a.lyrics), description=a.describe or "", title=a.title,

@@ -109,3 +109,12 @@ def test_acestep_request_mapping(tmp_path):
     b = build_request(t)
     assert b["task_type"] == "extract" and "vocals" in b["instruction"]
     assert sliders(0, 1)["use_cot_caption"] is False and sliders(1, 0)["lm_temperature"] == 1.15
+
+
+def test_acestep_down_gives_a_clear_error(monkeypatch):
+    from reverse_onus.backends.acestep import AceStepBackend
+    from reverse_onus.backends.base import BackendError
+    from reverse_onus.config import settings
+    monkeypatch.setattr(settings, "acestep_url", "http://127.0.0.1:9")  # nothing listens on the discard port
+    with pytest.raises(BackendError, match="Start its API server"):
+        AceStepBackend()._submit({"prompt": "pop"}, None)

@@ -95,12 +95,17 @@ class AceStepBackend(Backend):
         self.http = httpx.Client(base_url=settings.acestep_url, headers=headers, timeout=120)
 
     def _submit(self, body: dict, src: Path | None) -> str:
-        if src is not None:
-            form = {k: (json.dumps(v) if isinstance(v, (bool, dict, list)) else str(v)) for k, v in body.items()}
-            with open(src, "rb") as f:
-                r = self.http.post("/release_task", data=form, files={"src_audio": (src.name, f)})
-        else:
-            r = self.http.post("/release_task", json=body)
+        try:
+            if src is not None:
+                form = {k: (json.dumps(v) if isinstance(v, (bool, dict, list)) else str(v)) for k, v in body.items()}
+                with open(src, "rb") as f:
+                    r = self.http.post("/release_task", data=form, files={"src_audio": (src.name, f)})
+            else:
+                r = self.http.post("/release_task", json=body)
+        except httpx.ConnectError:
+            raise BackendError(f"Can't reach ACE-Step at {settings.acestep_url}. Start its API server first "
+                               "(start_api_server.bat on Windows, or `uv run acestep-api`) and wait until it "
+                               "has finished loading.") from None
         r.raise_for_status()
         doc = r.json()
         if doc.get("code", 200) != 200 or not (doc.get("data") or {}).get("task_id"):

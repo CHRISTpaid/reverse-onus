@@ -58,9 +58,14 @@ Then set `REVERSE_ONUS_BACKEND=acestep` wherever you run the clone. Songs are sa
 
 ## Three ways to use it
 
-**1. Studio page.** `reverse-onus serve`, then open http://localhost:8000. Custom and Simple
-modes, lyrics, styles, exclude, sliders, two takes, and Extend / Replace section / Cover /
-Stems / Get whole song on each song.
+**1. Studio page.** `reverse-onus serve`, then open http://localhost:8000. No account or
+sign-up: it runs on your machine. Custom and Simple modes, lyrics with section-tag buttons,
+style chips, exclude styles, vocal gender, weirdness and style-influence sliders, two takes per
+run, a searchable workspace, a song panel with lyrics, and a player bar. Each song's menu has
+Extend / Cover / Replace section / Get stems / Get whole song / Reuse prompt / Download.
+It works on phones too.
+
+![Studio page](docs/screenshots/studio-desktop.png)
 
 **2. From an AI assistant (MCP).** The assistant writes lyrics and styles from your request
 and calls the tools: `create_song`, `check_songs`, `extend_song`, `replace_section`,

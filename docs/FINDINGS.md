@@ -96,7 +96,6 @@ lyric syntax, sliders, extend/cover/edit/stems, two takes, API) over the best op
 - The prompt expansion Suno applies to Styles before conditioning, and how Exclude is applied.
 - What the sliders' 0..1 values do inside the model, and what `aug_creativity` controls.
 - How v6 maps a plain-language section edit onto the model.
-- Whether v6 extensions return the whole song or only the new part (Get whole song looks removed).
 
 ## 6. How to settle the unknowns with REA
 
@@ -147,9 +146,12 @@ planning, remastering and stems, and the editing tasks (extend, infill, cover) a
 main generator with audio context rather than on separate edit models.
 
 Get whole song: the user couldn't find it in the current (v6) web app (2026-10-13), and no
-capture shows a concat request, so it was most likely removed. Whether a v6 extension now comes
-back as the full song or only the new part is Unknown; the third capture's feed replies would
-show it in the extended clip's `duration`. The clone keeps `/api/concat` as an optional extra.
+capture shows a concat request, `concat_history` field or the words "whole song", so it was
+removed. Extend and Replace Section results come back as separate segments carrying
+`edited_clip_id` and `metadata.history` (source clip and time ranges); stitching happens client
+side: Extend = source up to `continue_at`, then the new clip; Replace Section = source with the
+34 s clip blended over `infill_start_s - 2` to `infill_end_s + 2`. The clone does the same
+(`extend` returns the new part, `/api/concat` stitches, `replace_section` splices).
 
 What this changes in the clone: the request models accept these keys,
 `POST /api/generate/v2-web/` takes a web-app-shaped body as is (generate, simple, extend,

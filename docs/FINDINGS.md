@@ -96,7 +96,7 @@ lyric syntax, sliders, extend/cover/edit/stems, two takes, API) over the best op
 - The prompt expansion Suno applies to Styles before conditioning, and how Exclude is applied.
 - What the sliders' 0..1 values do inside the model, and what `aug_creativity` controls.
 - How v6 maps a plain-language section edit onto the model.
-- The request shape for Get whole song.
+- Whether v6 extensions return the whole song or only the new part (Get whole song looks removed).
 
 ## 6. How to settle the unknowns with REA
 
@@ -144,8 +144,12 @@ summarised with REA (695 requests). Request bodies only: that export has no resp
 
 Inferred from these: v6 is a family of separately named models for generation, simple-mode
 planning, remastering and stems, and the editing tasks (extend, infill, cover) all run on the
-main generator with audio context rather than on separate edit models. Still not captured:
-Get whole song.
+main generator with audio context rather than on separate edit models.
+
+Get whole song: the user couldn't find it in the current (v6) web app (2026-10-13), and no
+capture shows a concat request, so it was most likely removed. Whether a v6 extension now comes
+back as the full song or only the new part is Unknown; the third capture's feed replies would
+show it in the extended clip's `duration`. The clone keeps `/api/concat` as an optional extra.
 
 What this changes in the clone: the request models accept these keys,
 `POST /api/generate/v2-web/` takes a web-app-shaped body as is (generate, simple, extend,

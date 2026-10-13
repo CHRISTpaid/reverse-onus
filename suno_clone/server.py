@@ -1,7 +1,8 @@
 """HTTP API modelled on Suno's composer actions.
 
   POST /api/generate          custom or simple mode, returns 2 clips (queued)
-  POST /api/generate/v2-web/  the Suno web app's own body shape (generate, extend, cover)
+  POST /api/generate/v2-web/  the Suno web app's own body shape (generate, simple, extend, cover, stems)
+  GET  /api/feed/v3?ids=a,b   clips in the shape Suno's feed returns them
   POST /api/extend            continue a clip from a timestamp
   POST /api/concat            "Get whole song" for the last clip of an extend chain
   POST /api/replace-section   regenerate part of a clip
@@ -29,7 +30,7 @@ from pydantic import BaseModel, ValidationError
 
 from . import lyrics as L, pipeline
 from .config import settings
-from .suno_compat import from_suno_body
+from .suno_compat import from_suno_body, to_suno_clip
 from .schemas import (Clip, ConcatRequest, CoverRequest, ExtendRequest, GenerateRequest,
                       ReplaceSectionRequest, StemsRequest)
 
@@ -120,7 +121,14 @@ def generate_suno_shape(body: dict, request: Request, idempotency_key: str | Non
     except (KeyError, ValueError, ValidationError) as e:
         raise HTTPException(422, str(e))
     _check_parent(getattr(req, "clip_id", None))
-    return _submit(op, req, req.variations, op, request, idempotency_key)
+    return _submit(op, req, getattr(req, "variations", 2), op, request, idempotency_key)
+
+
+@app.get("/api/feed/v3")
+def feed_suno_shape(ids: str, request: Request):
+    """Clips in the shape Suno's /api/feed/v3 returns them."""
+    clips = feed(ids, request).clips
+    return {"clips": [to_suno_clip(c, c.audio_url) for c in clips]}
 
 
 @app.post("/api/concat", response_model=Clip)

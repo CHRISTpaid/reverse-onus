@@ -35,7 +35,7 @@ request (Suno-style fields)
 
 ```sh
 pip install -e .[dev]
-pytest -q                                   # 16 tests, offline (mock engine, needs ffmpeg)
+pytest -q                                   # 17 tests, offline (mock engine, needs ffmpeg)
 
 # real songs: run ACE-Step 1.5's server, then point the clone at it
 git clone https://github.com/ace-step/ACE-Step-1.5 && (cd ACE-Step-1.5 && uv sync && uv run acestep-api)
@@ -65,8 +65,9 @@ curl -X POST localhost:8000/api/extend -d '{"clip_id":"<id1>","continue_at":95,"
 curl -X POST localhost:8000/api/concat -d '{"clip_id":"<extension id>"}' -H 'Content-Type: application/json'
 ```
 
-`POST /api/generate/v2-web/` also takes the exact body Suno's web app sends (generate, extend,
-cover), as seen in a capture of your own session.
+`POST /api/generate/v2-web/` also takes the exact body Suno's web app sends (generate, simple,
+extend, cover, stems), and `GET /api/feed/v3?ids=` returns clips in Suno's feed shape, both as
+seen in captures of your own session.
 
 Also `POST /api/replace-section`, `/api/cover`, `/api/stems`, `/api/lyrics/parse`,
 `/api/clips/{id}/cancel`, `GET /files/{id}/debug.json`. `Idempotency-Key` headers are honoured.
@@ -132,7 +133,7 @@ takes against each other for the noise floor.
 
 - Verified here: lyric parsing, style compilation, Suno field limits, the ACE-Step request
   mapping, generate / simple mode / extend / whole song / replace section / cover / stems,
-  the API, idempotency, and the scoring metrics, against the mock engine (16 passing tests).
+  the API, idempotency, and the scoring metrics, against the mock engine (17 passing tests).
 - Not yet run: live ACE-Step or YuE2 generation (needs a GPU machine). The ACE-Step requests
   follow its published API docs and are unit tested; the YuE2 call follows its model card.
 - Extend is built on ACE-Step's repaint task over the clip's tail plus silence. That is my

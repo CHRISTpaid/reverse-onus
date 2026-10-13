@@ -159,3 +159,19 @@ def test_suno_shaped_bodies(client):
     assert r.status_code == 202 and len(r.json()["clips"]) == 2
     assert client.post("/api/generate/v2-web/", json={"task": "infill"}).status_code == 422
     assert client.post("/api/generate/v2-web/", json={"task": "extend", "continue_clip_id": "nope"}).status_code == 404
+
+
+def test_suno_simple_stems_and_feed_shape(client):
+    from suno_clone.suno_compat import from_suno_body
+    op, req = from_suno_body({"task": "agentic_thinking", "mv": "chirp-goose", "prompt": "",
+                              "gpt_description_prompt": "a song about rain",
+                              "metadata": {"create_mode": "simple", "lyrics_model": "default"}})
+    assert op == "generate" and req.simple
+    op, req = from_suno_body({"task": "gen_stem", "continue_clip_id": "c1", "stem_task": "twelve"})
+    assert op == "stems" and req.clip_id == "c1"
+    r = client.post("/api/generate/v2-web/", json={"tags": "pop", "prompt": LYR})
+    ids = [c["id"] for c in r.json()["clips"]]
+    _wait(client, ids)
+    feed = client.get("/api/feed/v3", params={"ids": ",".join(ids)}).json()["clips"]
+    assert feed[0]["status"] == "complete" and feed[0]["metadata"]["tags"] == "pop"
+    assert feed[0]["metadata"]["prompt"] == LYR and feed[0]["audio_url"].endswith(".mp3")

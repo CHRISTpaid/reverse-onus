@@ -12,6 +12,8 @@
   POST /api/clips/{id}/cancel
   POST /api/lyrics/parse      how the clone reads your lyrics (sections, descriptors, length)
   GET  /files/{id}/...        audio, master.flac, debug.json
+  GET  /api/clips             recent clips (newest first)
+  GET  /                      the studio page (create, play, extend, cover, edit, stems)
   GET  /health
 
 Suno has no public developer API, so these routes are our own. Request field names also
@@ -22,9 +24,11 @@ own session.
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ValidationError
 
@@ -180,6 +184,25 @@ def parse_lyrics(body: LyricsBody):
                           "lines": s.lines} for s in song.sections],
             "voice": song.voice, "ended": song.ended, "instrumental": song.is_instrumental,
             "estimated_seconds": L.estimate_seconds(song), "engine_lyrics": L.render_tagged(song)}
+
+
+@app.get("/api/clips", response_model=ClipsResponse)
+def list_clips(request: Request, limit: int = 50):
+    """Most recent clips first (for the studio page)."""
+    root = pipeline.store.root
+    out = []
+    for p in root.glob("*/clip.json"):
+        try:
+            out.append(pipeline.store.get(p.parent.name))
+        except (KeyError, ValueError):
+            continue
+    out.sort(key=lambda c: c.created_at, reverse=True)
+    return ClipsResponse(clips=[_out(c, request) for c in out[: max(1, min(limit, 500))]])
+
+
+@app.get("/", include_in_schema=False)
+def studio():
+    return FileResponse(Path(__file__).parent / "web" / "index.html")
 
 
 @app.get("/health")

@@ -13,7 +13,10 @@ def _env(name: str, default: str | None = None) -> str | None:
 @dataclass
 class Settings:
     backend: str = field(default_factory=lambda: _env("SUNO_CLONE_BACKEND", "mock"))  # mock|acestep|yue2
-    workdir: Path = field(default_factory=lambda: Path(_env("SUNO_CLONE_WORKDIR", "./.suno-work")))
+    # Songs land here. A fixed home-folder default, because assistants start the MCP server
+    # from unpredictable working directories.
+    workdir: Path = field(default_factory=lambda: Path(_env("SUNO_CLONE_WORKDIR",
+                                                            str(Path.home() / "SunoClone"))).expanduser())
     public_base_url: str | None = field(default_factory=lambda: _env("SUNO_CLONE_PUBLIC_BASE_URL"))
 
     # Limits Suno enforces on its composer (docs/FINDINGS.md section 1).

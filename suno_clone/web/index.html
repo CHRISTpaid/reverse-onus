@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suno Clone Studio</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--ink:#1d1c1a;--muted:#6b6862;--line:#e3e0da;--accent:#d9480f;--accent-ink:#fff;--ok:#2b8a3e;--bad:#c92a2a}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1e1d1b;--ink:#ecebe7;--muted:#a19d95;--line:#33312d;--accent:#ff7a3d;--accent-ink:#141413;--ok:#69db7c;--bad:#ff8787}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0}header small{color:var(--muted)}
+main{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:20px;padding:20px;max-width:1300px;margin:0 auto}
+@media (max-width:800px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input[type=text],input[type=number],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:200px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+input[type=range]{width:100%}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
+.tabs{display:flex;gap:6px}.tabs button{flex:1}
+button{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+button.on,button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.primary{width:100%;margin-top:16px;padding:11px;font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+.hint{font-size:12px;color:var(--muted)}
+.clips{display:flex;flex-direction:column;gap:12px}
+.clip{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.clip h3{margin:0 0 2px;font-size:16px}.meta{font-size:12px;color:var(--muted)}
+.clip audio{width:100%;margin:10px 0 6px}
+.actions{display:flex;flex-wrap:wrap;gap:6px}.actions button,.actions a{font-size:13px;padding:5px 9px}
+.actions a{border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none}
+.status-complete{color:var(--ok)}.status-error,.status-cancelled{color:var(--bad)}
+.err{color:var(--bad);font-size:13px;margin-top:6px;white-space:pre-wrap}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);width:min(520px,92vw)}
+dialog::backdrop{background:#0008}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header><h1>Suno Clone Studio</h1><small id="engine">connecting…</small></header>
+<main>
+<section class="panel">
+  <div class="tabs"><button id="tabCustom" class="on">Custom</button><button id="tabSimple">Simple</button></div>
+  <div id="simpleBox" class="hidden">
+    <label for="description">Song description</label>
+    <textarea id="description" maxlength="3000" style="min-height:120px" placeholder="a sad country song about a lost dog"></textarea>
+  </div>
+  <div id="customBox">
+    <label for="lyrics">Lyrics</label>
+    <textarea id="lyrics" maxlength="5000" placeholder="[Verse 1]&#10;Neon on the water&#10;&#10;[Chorus]&#10;We drive all night&#10;&#10;[End]"></textarea>
+    <div class="hint">Tags: [Intro] [Verse 1] [Chorus] [Bridge] [Outro] [End], descriptors like [Verse: whispered], [Female Vocal].</div>
+    <label for="style">Styles</label>
+    <input id="style" type="text" maxlength="1000" placeholder="synthwave, dreamy, 100 bpm">
+    <label for="exclude">Exclude styles</label>
+    <input id="exclude" type="text" maxlength="1000" placeholder="guitar, autotune">
+    <label for="title">Title</label>
+    <input id="title" type="text" maxlength="100">
+  </div>
+  <div class="row" style="margin-top:12px">
+    <label style="margin:0"><input id="instrumental" type="checkbox"> Instrumental</label>
+    <select id="vocal" aria-label="Vocal gender"><option value="">Any voice</option><option value="female">Female</option><option value="male">Male</option></select>
+  </div>
+  <label for="weird">Weirdness <span id="weirdV">50%</span></label>
+  <input id="weird" type="range" min="0" max="100" value="50">
+  <label for="influence">Style influence <span id="influenceV">50%</span></label>
+  <input id="influence" type="range" min="0" max="100" value="50">
+  <div class="row">
+    <div><label for="duration">Length (seconds, optional)</label><input id="duration" type="number" min="10" max="480" placeholder="auto"></div>
+    <div><label for="seed">Seed (optional)</label><input id="seed" type="number" placeholder="random"></div>
+  </div>
+  <button id="create" class="primary">Create (2 songs)</button>
+  <div id="createErr" class="err"></div>
+</section>
+<section>
+  <div class="clips" id="clips"><div class="hint">Your songs will appear here.</div></div>
+</section>
+</main>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm">
+  <h3 id="dlgTitle" style="margin-top:0"></h3><div id="dlgBody"></div>
+  <div class="row" style="margin-top:16px"><button value="cancel">Cancel</button><button value="ok" class="on" id="dlgOk">Go</button></div>
+</form></dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+let simple = false;
+const clips = new Map();
+
+function setTab(s){ simple = s; $("tabSimple").classList.toggle("on", s); $("tabCustom").classList.toggle("on", !s);
+  $("simpleBox").classList.toggle("hidden", !s); $("customBox").classList.toggle("hidden", s); }
+$("tabCustom").onclick = () => setTab(false); $("tabSimple").onclick = () => setTab(true);
+for (const id of ["weird","influence"]) $(id).oninput = () => $(id+"V").textContent = $(id).value + "%";
+
+async function api(path, body){
+  const r = await fetch(path, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(Array.isArray(j.detail) ? j.detail.map(d => (d.loc||[]).slice(-1)[0] + ": " + d.msg).join("\n") : (j.detail || r.statusText));
+  return j;
+}
+function sliders(){ return {weirdness:$("weird").value/100, style_influence:$("influence").value/100,
+  vocal_gender:$("vocal").value || null}; }
+
+$("create").onclick = async () => {
+  $("createErr").textContent = "";
+  const body = {...sliders(), instrumental:$("instrumental").checked};
+  if (simple) body.description = $("description").value;
+  else Object.assign(body, {lyrics:$("lyrics").value, style:$("style").value, exclude_styles:$("exclude").value, title:$("title").value});
+  if ($("duration").value) body.duration = +$("duration").value;
+  if ($("seed").value) body.seed = +$("seed").value;
+  $("create").disabled = true;
+  try { const r = await api("/api/generate", body); r.clips.forEach(add); }
+  catch(e){ $("createErr").textContent = e.message; }
+  finally { $("create").disabled = false; }
+};
+
+function fmt(s){ if (s == null) return ""; s = Math.round(s); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+function add(c){ clips.set(c.id, c); render(); }
+function render(){
+  const list = [...clips.values()].sort((a,b) => b.created_at - a.created_at);
+  const box = $("clips");
+  if (!list.length) return;
+  box.innerHTML = "";
+  for (const c of list){
+    const m = c.metadata || {};
+    const el = document.createElement("div"); el.className = "clip";
+    const done = c.status === "complete";
+    const what = {generate:"", extend:"Extension", cover:"Cover", "replace-section":"Edited", stems:"Stem", concat:"Whole song"}[c.task] || c.task;
+    el.innerHTML = `<h3></h3><div class="meta"><span class="status-${c.status}">${c.status}</span>
+      ${what ? " · " + what : ""}${c.duration ? " · " + fmt(c.duration) : ""}${m.style ? " · " : ""}<span class="tags"></span></div>
+      ${done ? `<audio controls preload="none" src="${c.audio_url}"></audio>` : ""}
+      ${c.error ? `<div class="err"></div>` : ""}<div class="actions"></div>`;
+    el.querySelector("h3").textContent = c.title || "Untitled";
+    el.querySelector(".tags").textContent = m.style || "";
+    if (c.error) el.querySelector(".err").textContent = c.error;
+    const act = el.querySelector(".actions");
+    if (done){
+      const b = (label, fn) => { const x = document.createElement("button"); x.textContent = label; x.onclick = fn; act.append(x); };
+      if (c.task !== "stems"){
+        b("Extend", () => extend(c)); b("Replace section", () => replace(c)); b("Cover", () => cover(c)); b("Stems", () => stems(c));
+        if (c.task === "extend") b("Get whole song", () => whole(c));
+        b("Reuse prompt", () => reuse(c));
+      }
+      const a = document.createElement("a"); a.href = c.audio_url; a.download = (c.title || "song") + ".mp3"; a.textContent = "Download"; act.append(a);
+    } else if (c.status === "queued" || c.status === "running"){
+      const x = document.createElement("button"); x.textContent = "Cancel";
+      x.onclick = () => api(`/api/clips/${c.id}/cancel`, {}).then(add); act.append(x);
+    }
+    box.append(el);
+  }
+}
+
+function ask(title, fields){
+  return new Promise(res => {
+    $("dlgTitle").textContent = title; const body = $("dlgBody"); body.innerHTML = "";
+    for (const f of fields){
+      const l = document.createElement("label"); l.textContent = f.label; body.append(l);
+      const i = document.createElement(f.area ? "textarea" : "input");
+      if (!f.area) i.type = f.type || "text"; i.value = f.value ?? ""; i.name = f.name;
+      if (f.area) i.style.minHeight = "120px"; body.append(i);
+    }
+    $("dlg").onclose = () => {
+      if ($("dlg").returnValue !== "ok") return res(null);
+      const out = {}; for (const f of fields){ const v = body.querySelector(`[name=${f.name}]`).value;
+        out[f.name] = f.type === "number" ? (v === "" ? null : +v) : v; }
+      res(out);
+    };
+    $("dlg").showModal();
+  });
+}
+async function run(path, body){ try { (await api(path, body)).clips.forEach(add); } catch(e){ alert(e.message); } }
+async function extend(c){
+  const v = await ask("Extend “" + (c.title||"song") + "”", [
+    {name:"continue_at", label:"Continue from (seconds)", type:"number", value:Math.floor(c.duration)},
+    {name:"duration", label:"New part length (seconds)", type:"number", value:60},
+    {name:"lyrics", label:"Lyrics for the new part", area:true, value:"[Verse]\n"},
+    {name:"style", label:"Styles (empty = same as before)"}]);
+  if (v) run("/api/extend", {clip_id:c.id, ...v, ...sliders()});
+}
+async function replace(c){
+  const v = await ask("Replace a section", [
+    {name:"start", label:"From (seconds)", type:"number", value:0},
+    {name:"end", label:"To (seconds)", type:"number", value:Math.min(30, Math.floor(c.duration))},
+    {name:"lyrics", label:"New lyrics for that section", area:true, value:"[Chorus]\n"}]);
+  if (v) run("/api/replace-section", {clip_id:c.id, ...v, ...sliders()});
+}
+async function cover(c){
+  const v = await ask("Cover “" + (c.title||"song") + "”", [
+    {name:"style", label:"New styles", value:""},
+    {name:"audio_influence", label:"How closely to follow the original (0 to 1)", type:"number", value:0.5}]);
+  if (v) run("/api/cover", {clip_id:c.id, ...v, ...sliders()});
+}
+const stems = c => run("/api/stems", {clip_id:c.id});
+async function whole(c){ try { add(await api("/api/concat", {clip_id:c.id})); } catch(e){ alert(e.message); } }
+function reuse(c){ const m = c.metadata || {}; setTab(false);
+  $("lyrics").value = m.lyrics || ""; $("style").value = m.style || ""; $("exclude").value = m.exclude_styles || "";
+  $("title").value = c.title || ""; $("instrumental").checked = !!m.instrumental; scrollTo(0,0); }
+
+async function poll(){
+  const pending = [...clips.values()].filter(c => c.status === "queued" || c.status === "running").map(c => c.id);
+  if (pending.length){ try { (await api("/api/feed?ids=" + pending.join(","))).clips.forEach(c => clips.set(c.id, c)); render(); } catch(e){} }
+  setTimeout(poll, 2500);
+}
+(async () => {
+  try { const h = await api("/health"); $("engine").textContent = "engine: " + h.backend; } catch(e){ $("engine").textContent = "server not reachable"; }
+  try { (await api("/api/clips?limit=50")).clips.forEach(c => clips.set(c.id, c)); render(); } catch(e){}
+  poll();
+})();
+</script>
+</body>
+</html>

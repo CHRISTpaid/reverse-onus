@@ -1,10 +1,13 @@
 # Suno clone
 
+> Independent open-source project. Not affiliated with or endorsed by Suno, Inc.
+
 An open-source, Suno-style song generator: **Custom mode** (lyrics with `[Verse]`/`[Chorus]`
 tags, Styles, Exclude styles, Weirdness, Style Influence, vocal gender, Instrumental),
 **Simple mode** (a song description), **two takes per request**, **Extend** from any point,
 **Get whole song**, **Replace Section**, **Cover** (of a clip or your own audio) and **Stems**,
-behind an HTTP API and a CLI, with an A/B harness that scores the clone against your own Suno
+behind a studio web page, an MCP connector for AI assistants (Claude Code, Claude Desktop,
+Codex, ChatGPT), an HTTP API and a CLI, with an A/B harness that scores the clone against your own Suno
 songs.
 
 Why it's built this way: Suno is a transformer over audio tokens trained on a very large
@@ -31,16 +34,50 @@ request (Suno-style fields)
   -> clip.json + debug.json (exact engine request)
 ```
 
-## Quick start
+## What you need
+
+- Python 3.10+ and ffmpeg on PATH.
+- For real songs, a GPU running ACE-Step 1.5: an NVIDIA card with 8 GB+ VRAM is comfortable
+  (it runs in under 4 GB with the smallest settings, slower). No GPU? Rent one (RunPod, Vast,
+  Lambda) and point `ACESTEP_URL` at it. Without an engine the clone runs on a test-tone mock.
+
+## Install
 
 ```sh
-pip install -e .[dev]
-pytest -q                                   # 17 tests, offline (mock engine, needs ffmpeg)
+git clone <this repo> suno-clone && cd suno-clone
+pip install -e .[mcp]
 
-# real songs: run ACE-Step 1.5's server, then point the clone at it
-git clone https://github.com/ace-step/ACE-Step-1.5 && (cd ACE-Step-1.5 && uv sync && uv run acestep-api)
-export SUNO_CLONE_BACKEND=acestep           # ACESTEP_URL defaults to http://localhost:8001
+# the engine (once): ACE-Step 1.5's REST server on http://localhost:8001
+git clone https://github.com/ace-step/ACE-Step-1.5 && cd ACE-Step-1.5 && uv sync && uv run acestep-api
+# Windows: ACE-Step also ships a portable package with everything preinstalled (see its README)
+```
 
+Then set `SUNO_CLONE_BACKEND=acestep` wherever you run the clone. Songs are saved in
+`~/SunoClone` (change with `SUNO_CLONE_WORKDIR`).
+
+## Three ways to use it
+
+**1. Studio page.** `suno-clone serve`, then open http://localhost:8000. Custom and Simple
+modes, lyrics, styles, exclude, sliders, two takes, and Extend / Replace section / Cover /
+Stems / Get whole song on each song.
+
+**2. From an AI assistant (MCP).** The assistant writes lyrics and styles from your request
+and calls the tools: `create_song`, `check_songs`, `extend_song`, `replace_section`,
+`cover_song`, `split_stems`, `whole_song`, `list_songs`, `check_lyrics`, `cancel_songs`.
+
+| Assistant | Setup |
+|---|---|
+| Claude Code | `claude mcp add suno-clone -e SUNO_CLONE_BACKEND=acestep -- suno-clone mcp` |
+| Claude Desktop | in `claude_desktop_config.json`: `"mcpServers": {"suno-clone": {"command": "suno-clone", "args": ["mcp"], "env": {"SUNO_CLONE_BACKEND": "acestep"}}}` |
+| Codex | in `~/.codex/config.toml`: `[mcp_servers.suno-clone]` with `command = "suno-clone"`, `args = ["mcp"]`, `env = { SUNO_CLONE_BACKEND = "acestep" }` |
+| ChatGPT | needs a remote HTTPS server: run `suno-clone mcp --http --port 8765`, expose it with a tunnel (e.g. `cloudflared tunnel --url http://localhost:8765`), and add `https://<tunnel>/mcp` as a custom connector in ChatGPT's developer mode |
+
+Then ask, for example: "Write a synthwave song about driving at night, female vocals, and make
+it with suno-clone." Files are saved locally; the tools return their paths.
+
+**3. Command line.**
+
+```sh
 suno-clone generate --style "indie pop, dreamy, female vocals" --lyrics song.txt
 suno-clone generate --describe "a sad country song about a lost dog"
 suno-clone extend <clip_id> --at 95 --lyrics verse3.txt --duration 60
@@ -50,6 +87,8 @@ suno-clone cover <clip_id or my-demo.wav> --style "lofi jazz" --influence 0.7
 suno-clone stems <clip_id>
 suno-clone parse song.txt                   # see how the clone reads your tags
 ```
+
+Tests: `pip install -e .[dev] && pytest -q` (19 tests, offline, mock engine, needs ffmpeg).
 
 ## API
 
@@ -119,7 +158,7 @@ takes against each other for the noise floor.
 | Env var | Default | Meaning |
 |---|---|---|
 | `SUNO_CLONE_BACKEND` | `mock` | `acestep`, `yue2`, `mock` |
-| `SUNO_CLONE_WORKDIR` | `./.suno-work` | clips, audio, debug files |
+| `SUNO_CLONE_WORKDIR` | `~/SunoClone` | clips, audio, debug files |
 | `SUNO_CLONE_VARIATIONS` | `2` | takes per request |
 | `SUNO_CLONE_FORMAT` | `mp3` | delivery format (`mp3`, `wav`, `flac`); a lossless master is always kept |
 | `SUNO_CLONE_PUBLIC_BASE_URL` | | base for `audio_url` in API responses |
@@ -133,11 +172,12 @@ takes against each other for the noise floor.
 
 - Verified here: lyric parsing, style compilation, Suno field limits, the ACE-Step request
   mapping, generate / simple mode / extend / whole song / replace section / cover / stems,
-  the API, idempotency, and the scoring metrics, against the mock engine (17 passing tests).
+  the API, the studio page, the MCP tools (stdio, MCP SDK 1.x and 2.x), idempotency and the
+  scoring metrics, against the mock engine (19 passing tests).
 - Not yet run: live ACE-Step or YuE2 generation (needs a GPU machine). The ACE-Step requests
   follow its published API docs and are unit tested; the YuE2 call follows its model card.
 - Extend is built on ACE-Step's repaint task over the clip's tail plus silence. That is my
   reconstruction of Suno's continuation, and the first thing to check on a GPU.
 - Not built: Remaster (Suno's `chirp-halibut` upsampler), Personas/Voices, v6's plain-language section edits, mashups, image/video input.
-- Licences: ACE-Step 1.5 is MIT. YuE2 weights are CC BY-NC 4.0. Only use audio you own for
+- Licences: this project is MIT (LICENSE). ACE-Step 1.5 is MIT. YuE2 weights are CC BY-NC 4.0. Only use audio you own for
   covers and A/B references.

@@ -10,7 +10,8 @@
   suno-clone parse song.txt
   suno-clone compare clone.mp3 suno.mp3 [--lyrics song.txt]
   suno-clone ab cases.json --out ab-runs/
-  suno-clone serve --port 8000
+  suno-clone serve --port 8000          # API + studio page at http://localhost:8000
+  suno-clone mcp [--http]               # MCP server for AI assistants
 """
 from __future__ import annotations
 
@@ -98,6 +99,10 @@ def main(argv: list[str] | None = None) -> int:
     ab = sub.add_parser("ab")
     ab.add_argument("cases")
     ab.add_argument("--out", default="ab-runs")
+    mc = sub.add_parser("mcp", help="MCP server for Claude Code, Codex, ChatGPT and other assistants")
+    mc.add_argument("--http", action="store_true", help="streamable HTTP instead of stdio")
+    mc.add_argument("--host", default="127.0.0.1")
+    mc.add_argument("--port", type=int, default=8765)
     sv = sub.add_parser("serve")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8000)
@@ -137,6 +142,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if a.cmd == "ab":
         return run_ab(Path(a.cases), Path(a.out))
+    if a.cmd == "mcp":
+        from .mcp_server import main as mcp_main
+        mcp_main(http=a.http, host=a.host, port=a.port)
+        return 0
     if a.cmd == "serve":
         import uvicorn
         uvicorn.run("suno_clone.server:app", host=a.host, port=a.port)

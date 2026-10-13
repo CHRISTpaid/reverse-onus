@@ -181,3 +181,11 @@ def test_suno_simple_stems_and_feed_shape(client):
     feed = client.get("/api/feed/v3", params={"ids": ",".join(ids)}).json()["clips"]
     assert feed[0]["status"] == "complete" and feed[0]["metadata"]["tags"] == "pop"
     assert feed[0]["metadata"]["prompt"] == LYR and feed[0]["audio_url"].endswith(".mp3")
+
+
+def test_studio_page_and_clip_list(client):
+    page = client.get("/")
+    assert page.status_code == 200 and "Suno Clone Studio" in page.text
+    clips = client.get("/api/clips", params={"limit": 5}).json()["clips"]
+    assert 0 < len(clips) <= 5
+    assert clips == sorted(clips, key=lambda c: c["created_at"], reverse=True)

@@ -35,30 +35,34 @@ request (Suno-style fields)
   -> clip.json + debug.json (exact engine request)
 ```
 
-## What you need
+## Quick start
 
-- Python 3.10+ and ffmpeg on PATH.
-- For real songs, a GPU running ACE-Step 1.5: an NVIDIA card with 8 GB+ VRAM is comfortable
-  (it runs in under 4 GB with the smallest settings, slower). No GPU? Rent one (RunPod, Vast,
-  Lambda) and point `ACESTEP_URL` at it. Without an engine the clone runs on a test-tone mock.
+**New to this? Follow [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**, a step-by-step guide
+for Windows, Mac and Linux. No account, sign-up or domain name needed: it all runs on your computer.
 
-## Install
+The short version:
 
-```sh
-git clone https://github.com/CHRISTpaid/reverse-onus && cd reverse-onus
-pip install -e .[mcp]
+1. Start the engine, ACE-Step 1.5, on a machine with a GPU. On Windows, download its
+   [portable package](https://files.acemusic.ai/acemusic/win/ACE-Step-1.5.7z) and run
+   `start_api_server.bat`. Elsewhere, run
+   `git clone https://github.com/ACE-Step/ACE-Step-1.5 && cd ACE-Step-1.5 && uv sync && uv run acestep-api`.
+   It serves on http://localhost:8001.
+2. Install reverse-onus (needs Python 3.10+, Git and ffmpeg):
+   ```sh
+   git clone https://github.com/CHRISTpaid/reverse-onus && cd reverse-onus
+   python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+   pip install -e ".[mcp]"
+   ```
+3. Run `reverse-onus serve --engine acestep` and open http://localhost:8000.
 
-# the engine (once): ACE-Step 1.5's REST server on http://localhost:8001
-git clone https://github.com/ace-step/ACE-Step-1.5 && cd ACE-Step-1.5 && uv sync && uv run acestep-api
-# Windows: ACE-Step also ships a portable package with everything preinstalled (see its README)
-```
-
-Then set `REVERSE_ONUS_BACKEND=acestep` wherever you run the clone. Songs are saved in
-`~/ReverseOnus` (change with `REVERSE_ONUS_WORKDIR`).
+An NVIDIA card with 8 GB+ of video memory is comfortable (ACE-Step runs in under 4 GB with
+its smallest settings), and Apple Silicon Macs work too. No GPU? Rent one and point
+`ACESTEP_URL` at it. Without `--engine acestep` the page runs on a test-tone demo engine.
+Songs are saved in `~/ReverseOnus` (change with `REVERSE_ONUS_WORKDIR`).
 
 ## Three ways to use it
 
-**1. Studio page.** `reverse-onus serve`, then open http://localhost:8000. No account or
+**1. Studio page.** `reverse-onus serve --engine acestep`, then open http://localhost:8000. No account or
 sign-up: it runs on your machine. Custom and Simple modes, lyrics with section-tag buttons,
 style chips, exclude styles, vocal gender, weirdness and style-influence sliders, two takes per
 run, a searchable workspace, a song panel with lyrics, and a player bar. Each song's menu has
@@ -94,7 +98,7 @@ reverse-onus stems <clip_id>
 reverse-onus parse song.txt                   # see how the clone reads your tags
 ```
 
-Tests: `pip install -e .[dev] && pytest -q` (19 tests, offline, mock engine, needs ffmpeg).
+Tests: `pip install -e .[dev] && pytest -q` (21 tests, offline, mock engine, needs ffmpeg).
 
 ## API
 
@@ -179,7 +183,7 @@ takes against each other for the noise floor.
 - Verified here: lyric parsing, style compilation, Suno field limits, the ACE-Step request
   mapping, generate / simple mode / extend / whole song / replace section / cover / stems,
   the API, the studio page, the MCP tools (stdio, MCP SDK 1.x and 2.x), idempotency and the
-  scoring metrics, against the mock engine (19 passing tests).
+  scoring metrics, against the mock engine (21 passing tests).
 - Not yet run: live ACE-Step or YuE2 generation (needs a GPU machine). The ACE-Step requests
   follow its published API docs and are unit tested; the YuE2 call follows its model card.
 - Extend is built on ACE-Step's repaint task over the clip's tail plus silence. That is my

@@ -140,3 +140,22 @@ def test_server_flow(client):
     parsed = client.post("/api/lyrics/parse", json={"lyrics": LYR}).json()
     assert [s["kind"] for s in parsed["sections"]] == ["verse", "chorus"]
     assert client.get("/health").json()["backend"] == "mock"
+
+
+def test_suno_shaped_bodies(client):
+    from suno_clone.suno_compat import from_suno_body
+    body = {"mv": "chirp-hawk", "generation_type": "TEXT", "title": "t", "tags": "pop", "negative_tags": "rock n roll",
+            "prompt": LYR, "make_instrumental": False, "persona_id": None, "token": "x",
+            "metadata": {"create_mode": "custom",
+                         "control_sliders": {"weirdness_constraint": 0.23, "style_weight": 0.64, "aug_creativity": 1}}}
+    op, req = from_suno_body(body)
+    assert op == "generate" and req.weirdness == 0.23 and req.style_influence == 0.64
+    assert req.exclude_styles == "rock n roll" and req.lyrics == LYR
+    op, req = from_suno_body({"task": "extend", "continue_clip_id": "c1", "continue_at": 131, "prompt": "", "tags": "pop"})
+    assert op == "extend" and req.clip_id == "c1" and req.continue_at == 131
+    op, req = from_suno_body({"task": "cover", "cover_clip_id": "c2", "tags": "jazz"})
+    assert op == "cover" and req.clip_id == "c2"
+    r = client.post("/api/generate/v2-web/", json={**body, "metadata": {**body["metadata"]}, "duration": None})
+    assert r.status_code == 202 and len(r.json()["clips"]) == 2
+    assert client.post("/api/generate/v2-web/", json={"task": "infill"}).status_code == 422
+    assert client.post("/api/generate/v2-web/", json={"task": "extend", "continue_clip_id": "nope"}).status_code == 404

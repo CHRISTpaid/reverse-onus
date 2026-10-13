@@ -94,9 +94,10 @@ lyric syntax, sliders, extend/cover/edit/stems, two takes, API) over the best op
 
 - The exact v6 architecture, codec and sample rate.
 - The prompt expansion Suno applies to Styles before conditioning, and how Exclude is applied.
-- The numeric meaning of the Weirdness and Style Influence sliders.
+- What the sliders' 0..1 values do inside the model, and what `aug_creativity` controls.
 - How v6 maps a plain-language section edit onto the model.
-- The raw request fields the web app sends (model key, task names, slider fields).
+- The request shapes for Simple mode, Get whole song and Replace Section, and every response
+  body (clip metadata, status values, audio URLs). The first capture didn't include them.
 
 ## 6. How to settle the unknowns with REA
 
@@ -105,8 +106,30 @@ session sends during normal use. Follow [REA_CAPTURE.md](REA_CAPTURE.md). The mo
 names and slider fields it reveals go into `schemas.py` aliases and the slider mapping in
 `backends/acestep.py`; your own downloaded songs feed the A/B harness (`suno-clone ab`).
 
+## 7. Observed in a capture of the user's own session (2026-10-13)
+
+Recorded with Chrome DevTools in the user's own signed-in Chrome while they made songs, saved
+with "Copy all as HAR (sanitized)", cleaned of cookies, auth headers and token fields, then
+summarised with REA (695 requests). Request bodies only: that export has no response bodies.
+
+| Item | Observed |
+|---|---|
+| Generate endpoint | `POST studio-api-prod.suno.com/api/generate/v2-web/` for every generation, extend and cover |
+| Model key | `"mv": "chirp-hawk"`, `"generation_type": "TEXT"` (Inferred: chirp-hawk is the v6 family's internal name) |
+| Custom mode | `title`, `tags` (Styles), `negative_tags` (Exclude styles), `prompt` (lyrics), `make_instrumental`, `metadata.create_mode: "custom"` |
+| Sliders | `metadata.control_sliders = {weirdness_constraint: 0.23, style_weight: 0.64, aug_creativity: 1}`: Weirdness and Style Influence are sent on a 0..1 scale, the scale the clone already uses |
+| Extend | `"task": "extend"`, `continue_clip_id`, `continue_at` in seconds (131), `metadata.is_remix: true`, `metadata.lyrics_updated: false` |
+| Cover | `"task": "cover"`, `cover_clip_id`, `metadata.is_remix: true` |
+| Other body fields | `persona_id`, `artist_clip_id` / `artist_start_s` / `artist_end_s`, `continued_aligned_prompt`, `override_fields`, `user_uploaded_images_b64`, `transaction_uuid`, `lyrics_project_id`, `metadata.is_max_mode`, `is_mumble`, `disable_volume_normalization`, `create_surface`, `user_tier`, plus an anti-bot `token` / `token_provider` / `create_session_token` (redacted) |
+| Other endpoints | `/api/feed/v3` (polling for results), `/api/lyrics-projects` (+ `/flush`), `/api/gen/{id}/aligned_lyrics/v3`, `/api/gen/{id}/waveform-aggregates`, `/api/video/generate/{id}/status/` |
+
+What this changes in the clone: the request models accept these keys, and
+`POST /api/generate/v2-web/` takes a web-app-shaped body as is (`suno_compat.py`). Timestamped
+lyrics (`aligned_lyrics`) and waveform previews are features the clone doesn't have yet.
+
 ## Sources
 
+- The user's own session capture, 2026-10-13 (kept on their PC, not in this repo)
 - https://suno.com/blog/introducing-v6
 - https://help.suno.com/en/articles/13924929
 - https://played.fm/blog/suno-v6-review

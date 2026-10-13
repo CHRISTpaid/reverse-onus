@@ -35,7 +35,7 @@ request (Suno-style fields)
 
 ```sh
 pip install -e .[dev]
-pytest -q                                   # 15 tests, offline (mock engine, needs ffmpeg)
+pytest -q                                   # 16 tests, offline (mock engine, needs ffmpeg)
 
 # real songs: run ACE-Step 1.5's server, then point the clone at it
 git clone https://github.com/ace-step/ACE-Step-1.5 && (cd ACE-Step-1.5 && uv sync && uv run acestep-api)
@@ -65,11 +65,14 @@ curl -X POST localhost:8000/api/extend -d '{"clip_id":"<id1>","continue_at":95,"
 curl -X POST localhost:8000/api/concat -d '{"clip_id":"<extension id>"}' -H 'Content-Type: application/json'
 ```
 
+`POST /api/generate/v2-web/` also takes the exact body Suno's web app sends (generate, extend,
+cover), as seen in a capture of your own session.
+
 Also `POST /api/replace-section`, `/api/cover`, `/api/stems`, `/api/lyrics/parse`,
 `/api/clips/{id}/cancel`, `GET /files/{id}/debug.json`. `Idempotency-Key` headers are honoured.
 Suno has no public API, so these routes are the clone's own; the request models also accept
-the field names Suno's web app is widely reported to use (`tags`, `negative_tags`, `prompt`,
-`gpt_description_prompt`, `make_instrumental`, `continue_clip_id`).
+the web app's field names (`tags`, `negative_tags`, `prompt`, `gpt_description_prompt`,
+`make_instrumental`, `continue_clip_id`, `cover_clip_id`).
 
 ## Suno controls and what the clone does with them
 
@@ -86,7 +89,9 @@ the field names Suno's web app is widely reported to use (`tags`, `negative_tags
 | Simple mode | description only | `sample_mode` + `sample_query` |
 | Audio Influence | cover strength | `audio_cover_strength` 0.2..1.0 |
 
-The slider mappings are reconstructions (Suno shows no numbers). The A/B harness and a REA
+Suno sends both sliders on a 0..1 scale (`metadata.control_sliders.weirdness_constraint` and
+`style_weight`, from a capture of your own session), the same scale the clone uses. What they
+do inside Suno's model is still a reconstruction. The A/B harness and a REA
 capture of your own session ([docs/REA_CAPTURE.md](docs/REA_CAPTURE.md)) are how to correct them.
 
 ## Measuring against Suno
@@ -127,7 +132,7 @@ takes against each other for the noise floor.
 
 - Verified here: lyric parsing, style compilation, Suno field limits, the ACE-Step request
   mapping, generate / simple mode / extend / whole song / replace section / cover / stems,
-  the API, idempotency, and the scoring metrics, against the mock engine (15 passing tests).
+  the API, idempotency, and the scoring metrics, against the mock engine (16 passing tests).
 - Not yet run: live ACE-Step or YuE2 generation (needs a GPU machine). The ACE-Step requests
   follow its published API docs and are unit tested; the YuE2 call follows its model card.
 - Extend is built on ACE-Step's repaint task over the clip's tail plus silence. That is my

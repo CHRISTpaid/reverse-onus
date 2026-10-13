@@ -1,7 +1,7 @@
 """Request and clip models. Field names follow Suno's composer (Custom mode: Lyrics, Styles,
 Exclude styles, Title, Instrumental, Weirdness, Style Influence, Duration; Simple mode:
-song description). The raw web-app JSON keys are not public; docs/REA_CAPTURE.md shows how
-to read them from your own session and add aliases here."""
+song description). Aliases are the web app's own keys, confirmed from a capture of the
+user's session (docs/FINDINGS.md section 7); suno_compat.py accepts whole web-app bodies."""
 from __future__ import annotations
 
 import time
@@ -57,7 +57,7 @@ class ExtendRequest(SoundControls):
 
 
 class CoverRequest(SoundControls):
-    clip_id: str | None = None
+    clip_id: str | None = Field(None, alias="cover_clip_id")
     audio_url: str | None = None       # http(s) URL or local path of your own audio
     lyrics: str | None = Field(None, max_length=settings.max_lyrics_chars)  # None -> keep parent's
     title: str = Field("", max_length=settings.max_title_chars)

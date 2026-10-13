@@ -1,6 +1,7 @@
 """HTTP API modelled on Suno's composer actions.
 
   POST /api/generate          custom or simple mode, returns 2 clips (queued)
+  POST /api/generate/v2-web/  the Suno web app's own body shape (generate, extend, cover)
   POST /api/extend            continue a clip from a timestamp
   POST /api/concat            "Get whole song" for the last clip of an extend chain
   POST /api/replace-section   regenerate part of a clip
@@ -12,9 +13,10 @@
   GET  /files/{id}/...        audio, master.flac, debug.json
   GET  /health
 
-Suno has no public developer API, so these routes are our own. Request field names accept
-the keys Suno's web app is widely reported to use (tags, negative_tags, prompt,
-gpt_description_prompt, make_instrumental, continue_clip_id) as aliases.
+Suno has no public developer API, so these routes are our own. Request field names also
+accept the web app's keys (tags, negative_tags, prompt, gpt_description_prompt,
+make_instrumental, continue_clip_id, cover_clip_id), confirmed from a capture of the user's
+own session.
 """
 from __future__ import annotations
 
@@ -23,10 +25,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from . import lyrics as L, pipeline
 from .config import settings
+from .suno_compat import from_suno_body
 from .schemas import (Clip, ConcatRequest, CoverRequest, ExtendRequest, GenerateRequest,
                       ReplaceSectionRequest, StemsRequest)
 
@@ -107,6 +110,17 @@ def cover(body: CoverRequest, request: Request, idempotency_key: str | None = He
 def stems(body: StemsRequest, request: Request, idempotency_key: str | None = Header(default=None)):
     _check_parent(body.clip_id)
     return _submit("stems", body, 2, "stems", request, idempotency_key)
+
+
+@app.post("/api/generate/v2-web/", status_code=202, response_model=ClipsResponse)
+def generate_suno_shape(body: dict, request: Request, idempotency_key: str | None = Header(default=None)):
+    """Same body the Suno web app sends (see suno_compat.py)."""
+    try:
+        op, req = from_suno_body(body)
+    except (KeyError, ValueError, ValidationError) as e:
+        raise HTTPException(422, str(e))
+    _check_parent(getattr(req, "clip_id", None))
+    return _submit(op, req, req.variations, op, request, idempotency_key)
 
 
 @app.post("/api/concat", response_model=Clip)
